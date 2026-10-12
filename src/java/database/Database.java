@@ -41,7 +41,10 @@ public class Database {
 
     public Connection conectar() throws SQLException {
         Properties config = new Properties();
-        Path caminho = Path.of(System.getProperty("locadora.config", "/etc/tomcat10/projeto-jean.properties"));
+        Path caminhoPadrao = System.getProperty("os.name").startsWith("Windows")
+                ? Path.of(System.getProperty("user.home"), "projeto-jean.properties")
+                : Path.of("/etc/tomcat10/projeto-jean.properties");
+        Path caminho = Path.of(System.getProperty("locadora.config", caminhoPadrao.toString()));
         try (InputStream arquivo = Files.newInputStream(caminho)) {
             config.load(arquivo);
         } catch (IOException erro) {
