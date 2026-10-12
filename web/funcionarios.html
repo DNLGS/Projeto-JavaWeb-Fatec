@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Funcionários - Locadora Rebobina</title>
+</head>
+<body>
+<header>
+  <h1>Locadora Rebobina</h1>
+  <nav aria-label="Menu principal">
+    <a href="index.html">Início</a> | <a href="clientes.html">Clientes</a> |
+    <a href="funcionarios.html">Funcionários</a> | <a href="enderecos.html">Endereços</a> |
+    <a href="filmes.html">Filmes</a> | <a href="locacoes.html">Locações</a>
+  </nav>
+</header>
+<main>
+  <h2>Funcionários</h2>
+  <p>Campos com * são obrigatórios. O código e a data de cadastro são gerados ao salvar.</p>
+  <form action="ClassServletBase" method="post" accept-charset="UTF-8">
+    <input type="hidden" name="tipo" value="funcionario">
+    <p><label for="nome">Nome *</label><br>
+    <input id="nome" name="nome" maxlength="200" autocomplete="name" required></p>
+    <p><label for="documento">Documento *</label><br>
+    <input id="documento" name="documento" maxlength="30" required></p>
+    <p><label for="dt_nascimento">Data de nascimento</label><br>
+    <input type="date" id="dt_nascimento" name="dt_nascimento" min="1000-01-01" max="9999-12-31"></p>
+    <p><label for="endereco_id">Código do endereço (opcional)</label><br>
+    <input type="number" id="endereco_id" name="endereco_id" min="1" max="2147483647" step="1"></p>
+    <p><a href="ClassServletBase?tipo=endereco">Consultar códigos de endereços</a></p>
+    <p><label for="cargo">Cargo</label><br>
+    <input id="cargo" name="cargo" maxlength="100"></p>
+    <p><label for="nivel_acesso">Nível de acesso *</label><br>
+    <input type="number" id="nivel_acesso" name="nivel_acesso" min="0" max="2147483647" step="1" value="0" required></p>
+    <p><button type="submit">Salvar cadastro</button></p>
+  </form>
+  <h2>Consultar funcionários</h2>
+  <form action="ClassServletBase" method="get">
+    <input type="hidden" name="tipo" value="funcionario">
+    <p><label for="q">Nome ou documento</label><br>
+    <input id="q" name="q" maxlength="200"></p>
+    <button type="submit">Pesquisar</button>
+    <a href="ClassServletBase?tipo=funcionario">Ver todos</a>
+  </form>
+</main>
+</body>
+</html>

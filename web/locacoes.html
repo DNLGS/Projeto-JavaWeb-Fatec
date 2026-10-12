@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Locações - Locadora Rebobina</title>
+</head>
+<body>
+<header>
+  <h1>Locadora Rebobina</h1>
+  <nav aria-label="Menu principal">
+    <a href="index.html">Início</a> | <a href="clientes.html">Clientes</a> |
+    <a href="funcionarios.html">Funcionários</a> | <a href="enderecos.html">Endereços</a> |
+    <a href="filmes.html">Filmes</a> | <a href="locacoes.html">Locações</a>
+  </nav>
+</header>
+<main>
+  <h2>Locações</h2>
+  <p>Campos com * são obrigatórios. O código e a data de cadastro são gerados ao salvar.</p>
+  <form action="ClassServletBase" method="post" accept-charset="UTF-8">
+    <input type="hidden" name="tipo" value="locacao">
+    <p><label for="cliente_id">Código do cliente *</label><br>
+    <input type="number" id="cliente_id" name="cliente_id" min="1" max="2147483647" step="1" required></p>
+    <p><a href="ClassServletBase?tipo=cliente">Consultar códigos de clientes</a></p>
+    <p><label for="filmes">Códigos dos filmes, separados por vírgula *</label><br>
+    <input id="filmes" name="filmes" placeholder="Ex.: 1, 2" maxlength="1000" required></p>
+    <p><a href="ClassServletBase?tipo=filme">Consultar códigos de filmes</a></p>
+    <p><label for="qtd_dias">Quantidade de dias *</label><br>
+    <input type="number" id="qtd_dias" name="qtd_dias" min="1" max="2147483647" step="1" value="1" required></p>
+    <p><label for="data_devolucao">Data da devolução realizada (opcional)</label><br>
+    <input type="date" id="data_devolucao" name="data_devolucao" min="1000-01-01" max="9999-12-31"></p>
+    <p>Deixe a devolução em branco enquanto os filmes estiverem com o cliente.</p>
+    <p><button type="submit">Salvar cadastro</button></p>
+  </form>
+  <h2>Consultar locações</h2>
+  <form action="ClassServletBase" method="get">
+    <input type="hidden" name="tipo" value="locacao">
+    <p><label for="q">Nome do cliente ou título do filme</label><br>
+    <input id="q" name="q" maxlength="200"></p>
+    <button type="submit">Pesquisar</button>
+    <a href="ClassServletBase?tipo=locacao">Ver todos</a>
+  </form>
+</main>
+</body>
+</html>

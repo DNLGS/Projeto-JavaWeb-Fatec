@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="projeto-jean" default="war" basedir=".">
+    <property name="tomcat.home" location="/usr/share/tomcat10"/>
+
+    <target name="compile">
+        <fail unless="tomcat.home"
+              message="Informe o caminho do Tomcat com -Dtomcat.home=/caminho/do/tomcat"/>
+
+        <available file="${tomcat.home}/lib/servlet-api.jar"
+                   property="servlet.api.exists"/>
+
+        <fail unless="servlet.api.exists"
+              message="servlet-api.jar não encontrado no Tomcat informado."/>
+
+        <delete dir="build-ant/classes"/>
+        <mkdir dir="build-ant/classes"/>
+
+        <javac srcdir="src/java"
+               destdir="build-ant/classes"
+               release="21"
+               encoding="UTF-8"
+               includeantruntime="false">
+            <classpath>
+                <pathelement location="${tomcat.home}/lib/servlet-api.jar"/>
+                <fileset dir="Lib" includes="*.jar"/>
+            </classpath>
+        </javac>
+    </target>
+
+    <target name="war" depends="compile">
+        <mkdir dir="dist"/>
+
+        <war destfile="dist/projeto-jean.war"
+             needxmlfile="false"
+             manifest="src/conf/MANIFEST.MF">
+            <fileset dir="web"/>
+            <classes dir="build-ant/classes"/>
+            <lib dir="Lib" includes="*.jar"/>
+        </war>
+    </target>
+
+</project>

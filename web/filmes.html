@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Filmes VHS - Locadora Rebobina</title>
+</head>
+<body>
+<header>
+  <h1>Locadora Rebobina</h1>
+  <nav aria-label="Menu principal">
+    <a href="index.html">Início</a> | <a href="clientes.html">Clientes</a> |
+    <a href="funcionarios.html">Funcionários</a> | <a href="enderecos.html">Endereços</a> |
+    <a href="filmes.html">Filmes</a> | <a href="locacoes.html">Locações</a>
+  </nav>
+</header>
+<main>
+  <h2>Filmes VHS</h2>
+  <p>Campos com * são obrigatórios. O código e a data de cadastro são gerados ao salvar.</p>
+  <form action="ClassServletBase" method="post" accept-charset="UTF-8">
+    <input type="hidden" name="tipo" value="filme">
+    <p><label for="titulo">Título *</label><br>
+    <input id="titulo" name="titulo" maxlength="255" required></p>
+    <p><label for="genero">Gênero</label><br>
+    <input id="genero" name="genero" maxlength="100"></p>
+    <p><label for="nota_imb">Nota IMDb (0 a 10) *</label><br>
+    <input type="number" id="nota_imb" name="nota_imb" min="0" max="10" step="0.1" value="0" required></p>
+    <p><label for="valor_dia">Diária (R$) *</label><br>
+    <input type="number" id="valor_dia" name="valor_dia" min="0" max="9999999999.99" step="0.01" required></p>
+    <p><label for="observacoes">Observações</label><br>
+    <textarea id="observacoes" name="observacoes" maxlength="2000" rows="3"></textarea></p>
+    <p><button type="submit">Salvar cadastro</button></p>
+  </form>
+  <h2>Consultar filmes vhs</h2>
+  <form action="ClassServletBase" method="get">
+    <input type="hidden" name="tipo" value="filme">
+    <p><label for="q">Título ou gênero</label><br>
+    <input id="q" name="q" maxlength="200"></p>
+    <button type="submit">Pesquisar</button>
+    <a href="ClassServletBase?tipo=filme">Ver todos</a>
+  </form>
+</main>
+</body>
+</html>
