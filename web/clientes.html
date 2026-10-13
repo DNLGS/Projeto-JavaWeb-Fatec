@@ -10,7 +10,7 @@
   <h1>Locadora Rebobina</h1>
   <nav aria-label="Menu principal">
     <a href="index.html">Início</a> | <a href="clientes.html">Clientes</a> |
-    <a href="funcionarios.html">Funcionários</a> | <a href="enderecos.html">Endereços</a> |
+    <a href="funcionarios.html">Funcionários</a> |
     <a href="filmes.html">Filmes</a> | <a href="locacoes.html">Locações</a>
   </nav>
 </header>
@@ -25,9 +25,19 @@
     <input id="documento" name="documento" maxlength="30" required></p>
     <p><label for="dt_nascimento">Data de nascimento</label><br>
     <input type="date" id="dt_nascimento" name="dt_nascimento" min="1000-01-01" max="9999-12-31"></p>
-    <p><label for="endereco_id">Código do endereço (opcional)</label><br>
-    <input type="number" id="endereco_id" name="endereco_id" min="1" max="2147483647" step="1"></p>
-    <p><a href="ClassServletBase?tipo=endereco">Consultar códigos de endereços</a></p>
+    <fieldset>
+      <legend>Endereço</legend>
+      <p><label for="logradouro">Logradouro *</label><br>
+      <input id="logradouro" name="logradouro" maxlength="255" autocomplete="address-line1" required></p>
+      <p><label for="bairro">Bairro</label><br>
+      <input id="bairro" name="bairro" maxlength="150"></p>
+      <p><label for="numero">Número</label><br>
+      <input id="numero" name="numero" maxlength="30"></p>
+      <p><label for="ibge">Código IBGE (7 dígitos) *</label><br>
+      <input id="ibge" name="ibge" inputmode="numeric" pattern="[0-9]{7}" maxlength="7" required></p>
+      <p><label for="cep">CEP (8 dígitos, sem hífen) *</label><br>
+      <input id="cep" name="cep" inputmode="numeric" pattern="[0-9]{8}" maxlength="8" autocomplete="postal-code" required></p>
+    </fieldset>
     <p><button type="submit">Salvar cadastro</button></p>
   </form>
   <h2>Consultar clientes</h2>

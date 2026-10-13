@@ -3,6 +3,7 @@ import dao.EnderecoDao;
 import dao.FilmeDao;
 import dao.FuncionarioDao;
 import dao.LocacaoDao;
+import dao.PessoaDao;
 import database.Database;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -39,31 +40,17 @@ public class ClassServletBase extends HttpServlet {
             Database database = new Database();
             try (Connection con = database.conectar()) {
                 switch (tipo) {
-                    case "endereco":
-                        Endereco endereco = new Endereco();
-                        endereco.setLogradouro(texto(request, "logradouro", 255, true));
-                        endereco.setBairro(texto(request, "bairro", 150, false));
-                        endereco.setNumero(texto(request, "numero", 30, false));
-                        String ibge = texto(request, "ibge", 7, true);
-                        String cep = texto(request, "cep", 8, true);
-                        if (!ibge.matches("[0-9]{7}") || !cep.matches("[0-9]{8}")) {
-                            throw new IllegalArgumentException("Informe IBGE com 7 dígitos e CEP com 8 dígitos.");
-                        }
-                        endereco.setIbge(Integer.parseInt(ibge));
-                        endereco.setCep(Integer.parseInt(cep));
-                        new EnderecoDao(con).insert(endereco);
-                        break;
                     case "cliente":
                         Cliente cliente = new Cliente();
                         preencherPessoa(request, cliente);
-                        new ClienteDao(con).insert(cliente);
+                        salvarPessoa(con, new ClienteDao(con), cliente);
                         break;
                     case "funcionario":
                         Funcionario funcionario = new Funcionario();
                         preencherPessoa(request, funcionario);
                         funcionario.setCargo(texto(request, "cargo", 100, false));
                         funcionario.setNivel_acesso(inteiro(request.getParameter("nivel_acesso"), "Nível de acesso", 0));
-                        new FuncionarioDao(con).insert(funcionario);
+                        salvarPessoa(con, new FuncionarioDao(con), funcionario);
                         break;
                     case "filme":
                         Filme filme = new Filme();
@@ -117,11 +104,6 @@ public class ClassServletBase extends HttpServlet {
             pagina = pagina(tipo);
             busca = texto(request, "q", 200, false);
             switch (tipo) {
-                case "endereco":
-                    sql = "SELECT id AS Código, logradouro AS Logradouro, bairro AS Bairro, numero AS Número, "
-                            + "LPAD(ibge, 7, '0') AS IBGE, LPAD(cep, 8, '0') AS CEP FROM endereco "
-                            + "WHERE CONCAT(logradouro, ' ', COALESCE(bairro, '')) LIKE ? ORDER BY id DESC";
-                    break;
                 case "cliente":
                     sql = "SELECT c.id AS Código, c.nome AS Nome, c.documento AS Documento, "
                             + "COALESCE(CONCAT(e.id, ' - ', e.logradouro, ', ', COALESCE(e.numero, '')), 'Sem endereço') AS Endereço, "
@@ -208,7 +190,7 @@ public class ClassServletBase extends HttpServlet {
         switch (tipo) {
             case "cliente": return "clientes.html";
             case "funcionario": return "funcionarios.html";
-            case "endereco": return "enderecos.html";
+            case "endereco": throw new IllegalArgumentException("Cadastre o endereço junto com um cliente ou funcionário.");
             case "filme": return "filmes.html";
             case "locacao": return "locacoes.html";
             default: throw new IllegalArgumentException("Cadastro inválido.");
@@ -223,11 +205,34 @@ public class ClassServletBase extends HttpServlet {
             throw new IllegalArgumentException("Nascimento não pode ser no futuro.");
         }
         pessoa.setDt_nascimento(nascimento);
-        String codigo = texto(request, "endereco_id", 10, false);
-        if (!codigo.isEmpty()) {
-            Endereco endereco = new Endereco();
-            endereco.setId(inteiro(codigo, "Código do endereço", 1));
-            pessoa.setEndereco(endereco);
+        Endereco endereco = new Endereco();
+        endereco.setLogradouro(texto(request, "logradouro", 255, true));
+        endereco.setBairro(texto(request, "bairro", 150, false));
+        endereco.setNumero(texto(request, "numero", 30, false));
+        String ibge = texto(request, "ibge", 7, true);
+        String cep = texto(request, "cep", 8, true);
+        if (!ibge.matches("[0-9]{7}") || !cep.matches("[0-9]{8}")) {
+            throw new IllegalArgumentException("Informe IBGE com 7 dígitos e CEP com 8 dígitos.");
+        }
+        endereco.setIbge(Integer.parseInt(ibge));
+        endereco.setCep(Integer.parseInt(cep));
+        pessoa.setEndereco(endereco);
+    }
+
+    private static <T extends Pessoa> void salvarPessoa(Connection con, PessoaDao<T> dao, T pessoa)
+            throws SQLException {
+        con.setAutoCommit(false);
+        try {
+            new EnderecoDao(con).insert(pessoa.getEndereco());
+            dao.insert(pessoa);
+            con.commit();
+        } catch (SQLException | RuntimeException erro) {
+            try {
+                con.rollback();
+            } catch (SQLException falhaRollback) {
+                erro.addSuppressed(falhaRollback);
+            }
+            throw erro;
         }
     }
 
@@ -288,7 +293,7 @@ public class ClassServletBase extends HttpServlet {
                 + "<title>" + html(titulo) + " - Locadora Rebobina</title></head><body>");
         out.println("<header><h1>Locadora Rebobina</h1><nav aria-label='Menu principal'>"
                 + "<a href='index.html'>Início</a> | <a href='clientes.html'>Clientes</a> | "
-                + "<a href='funcionarios.html'>Funcionários</a> | <a href='enderecos.html'>Endereços</a> | "
+                + "<a href='funcionarios.html'>Funcionários</a> | "
                 + "<a href='filmes.html'>Filmes</a> | <a href='locacoes.html'>Locações</a></nav></header>");
         out.println("<main><h2>" + html(titulo) + "</h2>");
     }
@@ -308,7 +313,7 @@ public class ClassServletBase extends HttpServlet {
     private void falhaBanco(HttpServletResponse response, SQLException erro) throws IOException {
         getServletContext().log("Erro ao acessar o banco da locadora", erro);
         if (erro.getSQLState() != null && erro.getSQLState().startsWith("23")) {
-            erro(response, 400, "Confira os códigos de endereço, cliente e filmes e se o documento já está cadastrado.");
+            erro(response, 400, "Confira os códigos de cliente e filmes e se o documento já está cadastrado.");
         } else {
             erro(response, 500, "Não foi possível acessar o banco. Tente novamente mais tarde.");
         }
