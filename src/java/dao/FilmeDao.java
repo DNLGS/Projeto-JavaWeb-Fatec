@@ -2,7 +2,10 @@ package dao;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import database.BaseDao;
 import models.Filme;
 
@@ -10,6 +13,40 @@ public class FilmeDao extends BaseDao<Filme, Integer> {
 
     public FilmeDao(Connection con) {
         super(con);
+    }
+
+    public Filme findById(int id) throws SQLException {
+        try (PreparedStatement stmt = _con.prepareStatement("SELECT * FROM filme WHERE id = ?")) {
+            stmt.setInt(1, id);
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next() ? map(rs) : null;
+            }
+        }
+    }
+
+    public List<Filme> search(String busca) throws SQLException {
+        String sql = "SELECT * FROM filme WHERE CONCAT(titulo, ' ', COALESCE(genero, '')) LIKE ? ORDER BY id DESC";
+        List<Filme> filmes = new ArrayList<>();
+        try (PreparedStatement stmt = _con.prepareStatement(sql)) {
+            stmt.setString(1, "%" + busca + "%");
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    filmes.add(map(rs));
+                }
+            }
+        }
+        return filmes;
+    }
+
+    private Filme map(ResultSet rs) throws SQLException {
+        Filme filme = new Filme();
+        filme.setId(rs.getInt("id"));
+        filme.setTitulo(rs.getString("titulo"));
+        filme.setGenero(rs.getString("genero"));
+        filme.setNota_imb(rs.getDouble("nota_imb"));
+        filme.setValor_dia(rs.getBigDecimal("valor_dia").doubleValue());
+        filme.setObservacoes(rs.getString("observacoes"));
+        return filme;
     }
 
     @Override

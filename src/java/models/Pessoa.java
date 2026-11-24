@@ -7,7 +7,7 @@ public class Pessoa {
     private String documento;
     private Endereco endereco;
     private LocalDate dt_nascimento;
-    private final LocalDate dt_cadastro = LocalDate.now();
+    private LocalDate dt_cadastro = LocalDate.now();
 
     public String getNome() {
         return nome;
@@ -35,6 +35,10 @@ public class Pessoa {
     }
     public LocalDate getDt_cadastro() {
         return dt_cadastro;
+    }
+
+    public void setDt_cadastro(LocalDate dt_cadastro) {
+        this.dt_cadastro = dt_cadastro;
     }
 
 }

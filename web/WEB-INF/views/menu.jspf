@@ -1,0 +1,13 @@
+<%@ page import="views.Html" pageEncoding="UTF-8" %>
+<% String ctx = Html.escape(request.getContextPath()); %>
+<header>
+  <h1>Locadora Rebobina</h1>
+  <nav aria-label="Menu principal">
+    <a href="<%= ctx %>/index.html">Início</a> |
+    <a href="<%= ctx %>/clientes">Clientes</a> |
+    <a href="<%= ctx %>/funcionarios">Funcionários</a> |
+    <a href="<%= ctx %>/enderecos">Endereços</a> |
+    <a href="<%= ctx %>/filmes">Filmes</a> |
+    <a href="<%= ctx %>/locacoes">Locações</a>
+  </nav>
+</header>

@@ -2,8 +2,14 @@ package dao;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Savepoint;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import database.BaseDao;
@@ -12,9 +18,62 @@ import models.Filme;
 import models.Locacao;
 
 public class LocacaoDao extends BaseDao<Locacao, Integer> {
+    private static final String CONSULTA = "SELECT l.id, l.cliente_id, c.nome, l.qtd_dias, "
+            + "l.data_cadastro, l.data_devolucao, f.id AS filme_id, f.titulo "
+            + "FROM locacao l JOIN cliente c ON c.id = l.cliente_id "
+            + "LEFT JOIN locacao_filme lf ON lf.locacao_id = l.id LEFT JOIN filme f ON f.id = lf.filme_id";
 
     public LocacaoDao(Connection con) {
         super(con);
+    }
+
+    public Locacao findById(int id) throws SQLException {
+        try (PreparedStatement stmt = _con.prepareStatement(CONSULTA + " WHERE l.id = ? ORDER BY f.id")) {
+            stmt.setInt(1, id);
+            List<Locacao> locacoes = carregar(stmt);
+            return locacoes.isEmpty() ? null : locacoes.getFirst();
+        }
+    }
+
+    public List<Locacao> search(String busca) throws SQLException {
+        String sql = CONSULTA + " WHERE c.nome LIKE ? OR EXISTS (SELECT 1 FROM locacao_filme pesquisa "
+                + "JOIN filme pf ON pf.id = pesquisa.filme_id WHERE pesquisa.locacao_id = l.id AND pf.titulo LIKE ?) "
+                + "ORDER BY l.id DESC, f.id";
+        try (PreparedStatement stmt = _con.prepareStatement(sql)) {
+            String filtro = "%" + busca + "%";
+            stmt.setString(1, filtro);
+            stmt.setString(2, filtro);
+            return carregar(stmt);
+        }
+    }
+
+    private List<Locacao> carregar(PreparedStatement stmt) throws SQLException {
+        Map<Integer, Locacao> locacoes = new LinkedHashMap<>();
+        try (ResultSet rs = stmt.executeQuery()) {
+            while (rs.next()) {
+                int id = rs.getInt("id");
+                Locacao locacao = locacoes.get(id);
+                if (locacao == null) {
+                    locacao = new Locacao(rs.getObject("data_cadastro", LocalDate.class));
+                    locacao.setId(id);
+                    locacao.setQtd_dias(rs.getInt("qtd_dias"));
+                    locacao.setData_devolucao(rs.getObject("data_devolucao", LocalDate.class));
+                    Cliente cliente = new Cliente();
+                    cliente.setId(rs.getInt("cliente_id"));
+                    cliente.setNome(rs.getString("nome"));
+                    locacao.setCliente(cliente);
+                    locacoes.put(id, locacao);
+                }
+                int filmeId = rs.getInt("filme_id");
+                if (!rs.wasNull()) {
+                    Filme filme = new Filme();
+                    filme.setId(filmeId);
+                    filme.setTitulo(rs.getString("titulo"));
+                    locacao.addFilme(filme);
+                }
+            }
+        }
+        return new ArrayList<>(locacoes.values());
     }
 
     @Override
@@ -24,7 +83,7 @@ public class LocacaoDao extends BaseDao<Locacao, Integer> {
 
     @Override
     protected String getUpdateSQL() {
-        return "UPDATE locacao SET cliente_id = ?, qtd_dias = ?, data_cadastro = ?, data_devolucao = ? WHERE id = ?";
+        return "UPDATE locacao SET cliente_id = ?, qtd_dias = ?, data_devolucao = ? WHERE id = ?";
     }
 
     @Override
@@ -42,8 +101,10 @@ public class LocacaoDao extends BaseDao<Locacao, Integer> {
 
     @Override
     protected void prepareUpdate(PreparedStatement stmt, Locacao entity) throws SQLException {
-        prepareInsert(stmt, entity);
-        stmt.setInt(5, entity.getId());
+        stmt.setInt(1, ((Cliente) entity.getCliente()).getId());
+        stmt.setInt(2, entity.getQtd_dias());
+        setDate(stmt, 3, entity.getData_devolucao());
+        stmt.setInt(4, entity.getId());
     }
 
     @Override
@@ -57,11 +118,11 @@ public class LocacaoDao extends BaseDao<Locacao, Integer> {
     }
 
     @Override
-    public void update(Locacao entity) throws SQLException {
-        salvar(entity, true);
+    public int update(Locacao entity) throws SQLException {
+        return salvar(entity, true);
     }
 
-    private void salvar(Locacao entity, boolean atualizar) throws SQLException {
+    private int salvar(Locacao entity, boolean atualizar) throws SQLException {
         Objects.requireNonNull(entity, "A locacao e obrigatoria.");
         if (!(entity.getCliente() instanceof Cliente)
                 || ((Cliente) entity.getCliente()).getId() <= 0) {
@@ -90,9 +151,20 @@ public class LocacaoDao extends BaseDao<Locacao, Integer> {
 
         Throwable falha = null;
         boolean transacaoEncerrada = false;
+        int alterados = 1;
         try {
             if (atualizar) {
-                super.update(entity);
+                alterados = super.update(entity);
+                if (alterados == 0 && !existeParaAtualizar(entity.getId())) {
+                    if (transacaoPropria) {
+                        _con.rollback();
+                    } else {
+                        _con.rollback(savepoint);
+                        _con.releaseSavepoint(savepoint);
+                    }
+                    transacaoEncerrada = true;
+                    return 0;
+                }
                 try (PreparedStatement stmt = _con.prepareStatement(
                         "DELETE FROM locacao_filme WHERE locacao_id = ?")) {
                     stmt.setInt(1, entity.getId());
@@ -116,6 +188,7 @@ public class LocacaoDao extends BaseDao<Locacao, Integer> {
                 _con.releaseSavepoint(savepoint);
             }
             transacaoEncerrada = true;
+            return alterados;
         } catch (SQLException | RuntimeException ex) {
             falha = ex;
             try {
@@ -143,6 +216,15 @@ public class LocacaoDao extends BaseDao<Locacao, Integer> {
                     }
                     falha.addSuppressed(restoreError);
                 }
+            }
+        }
+    }
+
+    private boolean existeParaAtualizar(int id) throws SQLException {
+        try (PreparedStatement stmt = _con.prepareStatement("SELECT id FROM locacao WHERE id = ? FOR UPDATE")) {
+            stmt.setInt(1, id);
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next();
             }
         }
     }

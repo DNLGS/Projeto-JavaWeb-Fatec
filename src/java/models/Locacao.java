@@ -17,9 +17,17 @@ public class Locacao{
         this.qtd_dias = qtd_dias;
     }
 
-    private final LocalDate data_cadastro = LocalDate.now();
+    private final LocalDate data_cadastro;
     private LocalDate data_devolucao;
     private int id;
+
+    public Locacao() {
+        this(LocalDate.now());
+    }
+
+    public Locacao(LocalDate dataCadastro) {
+        this.data_cadastro = dataCadastro;
+    }
     
     public int getId() {
         return id;

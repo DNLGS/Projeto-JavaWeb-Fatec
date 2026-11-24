@@ -40,19 +40,19 @@ public abstract class BaseDao<T, ID> {
         }
     }
 
-    public void update(T entity) throws SQLException {
+    public int update(T entity) throws SQLException {
         Objects.requireNonNull(entity, "A entidade e obrigatoria.");
         try (PreparedStatement stmt = _con.prepareStatement(getUpdateSQL())) {
             prepareUpdate(stmt, entity);
-            stmt.executeUpdate();
+            return stmt.executeUpdate();
         }
     }
 
-    public void delete(ID id) throws SQLException {
+    public int delete(ID id) throws SQLException {
         Objects.requireNonNull(id, "O ID e obrigatorio.");
         try (PreparedStatement stmt = _con.prepareStatement(getDeleteSQL())) {
             stmt.setObject(1, id);
-            stmt.executeUpdate();
+            return stmt.executeUpdate();
         }
     }
 
